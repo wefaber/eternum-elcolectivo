@@ -4,22 +4,12 @@ import { fadeUp, fadeUpStagger, fadeUpItem } from "../lib/animations";
 
 const papers = [
   {
-    title: "Registro de decisiones técnicas",
-    desc: "Metodología para documentar decisiones de diseño y arquitectura entre equipos.",
-    type: "PDF",
-    size: "—",
-  },
-  {
-    title: "Errores frecuentes y resoluciones",
-    desc: "Compilación de errores encontrados durante el desarrollo y cómo se resolvieron.",
-    type: "PDF",
-    size: "—",
-  },
-  {
-    title: "Guía de participación",
-    desc: "Cómo contribuir a El Colectivo: qué circula, qué no, y cómo atribuir correctamente.",
-    type: "Markdown",
-    size: "—",
+    title: "Más allá del 1 al 10",
+    subtitle: "Calibración semántica en encuestas",
+    desc: "Por qué la escala numérica deforma aquello que intenta medir, y la Ley de Goodhart que aparece cuando optimizamos un sistema con esa métrica. Propone un modelo de calibración semántica en tres capas que interpreta cada respuesta desde el marco de referencia de quien la dio.",
+    meta: "PDF · 4,2 MB · Eternum",
+    href: "/papers/calibracion-semantica-encuestas.pdf",
+    file: "mas-alla-del-1-al-10-calibracion-semantica.pdf",
   },
 ];
 
@@ -36,63 +26,60 @@ export function Papers() {
         <motion.div variants={fadeUp} className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-text-primary mb-4">Papers</h2>
           <p className="text-text-secondary max-w-2xl mx-auto text-lg">
-            Documentación compartida entre equipos. Próximamente disponible.
+            Investigación abierta del colectivo. Lo que se publica acá queda disponible para leer,
+            citar y discutir.
           </p>
         </motion.div>
 
-        <motion.div
+        <motion.ul
           variants={fadeUpStagger}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-6"
+          className="max-w-4xl mx-auto space-y-4 list-none p-0 m-0"
         >
-          {papers.map(({ title, desc, type, size }) => (
-            <motion.div
-              key={title}
-              variants={fadeUpItem}
-              whileHover={{ y: -5, scale: 1.01 }}
-              className="group p-6 rounded-2xl bg-surface-raised border border-border hover:border-bright/20 transition-colors duration-300"
-            >
-              <motion.div
-                whileHover={{ rotate: [0, -15, 15, 0], transition: { duration: 0.5 } }}
-                className="w-10 h-10 rounded-xl bg-mid/10 flex items-center justify-center mb-4 group-hover:bg-mid/20 transition-colors"
-              >
-                <FileText className="w-5 h-5 text-mid" />
-              </motion.div>
-              <h3 className="font-semibold text-text-primary mb-2">{title}</h3>
-              <p className="text-sm text-text-secondary leading-relaxed mb-4">{desc}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-text-secondary">
-                  {type} · {size}
-                </span>
-                <motion.span
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  className="text-xs text-bright flex items-center gap-1"
+          {papers.map(({ title, subtitle, desc, meta, href, file }) => (
+            <motion.li key={title} variants={fadeUpItem} className="group">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between p-6 sm:p-7 rounded-2xl bg-surface-raised border border-border hover:border-border-strong transition-colors duration-300">
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="w-11 h-11 shrink-0 rounded-xl bg-badge-bg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-mid" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xl font-semibold text-text-primary leading-snug">
+                      {title}
+                    </h3>
+                    <p className="text-sm text-text-secondary mt-0.5">{subtitle}</p>
+                    <p className="text-sm text-text-secondary leading-relaxed mt-3">{desc}</p>
+                    <p className="text-xs text-text-secondary mt-3 tabular-nums">{meta}</p>
+                  </div>
+                </div>
+                <a
+                  href={href}
+                  download={file}
+                  aria-label={`Descargar ${title} en PDF`}
+                  className="w-full sm:w-auto shrink-0 sm:self-start inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-bright text-text-on-accent text-sm font-medium hover:bg-bright/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bright transition-colors duration-200 whitespace-nowrap"
                 >
-                  <button className="flex hover:cursor-pointer hover:bg-green-400/20 p-2 rounded-lg">
-                    <Download className="w-3 h-3 mr-1" />
-                    Descargar
-                  </button>
-                </motion.span>
+                  <Download className="w-4 h-4" aria-hidden="true" />
+                  Descargar
+                </a>
               </div>
-            </motion.div>
+            </motion.li>
           ))}
-        </motion.div>
+        </motion.ul>
 
         <motion.div variants={fadeUp} className="mt-12 text-center">
           <motion.a
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            href="https://github.com/itica-lat/eternum-elcolectivo"
+            href="https://github.com/wefaber/eternum-elcolectivo"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-border text-text-primary hover:bg-mid/5 transition-colors duration-200"
           >
-            <Search className="w-5 h-5" />
+            <Search className="w-5 h-5" aria-hidden="true" />
             Explorar el repositorio
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4" aria-hidden="true" />
           </motion.a>
         </motion.div>
       </div>
