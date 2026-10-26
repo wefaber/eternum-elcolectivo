@@ -3,15 +3,54 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "deploy = build + publish, rollback = flip nginx back to the previous slot (no rebuild)"
+        type: choice
+        options: [deploy, rollback]
+        default: deploy
 
+# Never cancel a deploy in flight: it can be killed between the snippet swap and the health check,
+# which is the only window where the site is not verifiably serving one of the two slots.
 concurrency:
-  group: deploy-elcolectivo
-  cancel-in-progress: true
+  group: deploy-colectivo-static
+  cancel-in-progress: false
 
 jobs:
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'rollback'
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rollback to the previous slot
+        run: bash deploy/colectivo-static.sh --rollback
+
   deploy:
+    if: github.event_name == 'push' || inputs.mode == 'deploy'
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
-      - name: Deploy
-        run: bash /home/hermes/deploy/elcolectivo.sh
+      - uses: actions/checkout@v4
+
+      - name: Put bun on PATH (package scripts call plain `bun`)
+        run: echo /opt/bun >> "$GITHUB_PATH"
+
+      - name: Install
+        run: /opt/bun/bun install --frozen-lockfile
+
+      - name: Check (tsc + oxlint)
+        run: |
+          /opt/bun/bun run typecheck
+          /opt/bun/bun run lint
+
+      - name: Build
+        run: /opt/bun/bun run build
+
+      - name: Blue/green deploy
+        run: bash deploy/colectivo-static.sh "${{ github.sha }}"
+
+      - name: What is live
+        if: always()
+        run: bash deploy/colectivo-static.sh --status

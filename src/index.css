@@ -5,6 +5,11 @@
 
 @import "tailwindcss";
 
+/* Tailwind v4 escanea todo el repo buscando clases. deploy/ es shell, nginx y markdown: no genera
+   UI, y sus textos (cache-control, try_files, rangos de fecha) se colaban al bundle como utilidades
+   accidentales. Se excluye para que agregar documentación de deploy no cambie el CSS publicado. */
+@source not "../deploy";
+
 /* ── Dark mode variant ──────────────────── */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
