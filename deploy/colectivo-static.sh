@@ -14,18 +14,21 @@
 # not end up serving the new entry asset, the snippet moves back on its own. The live slot is never
 # touched while it is serving, so --rollback is a flip and not a rebuild.
 #
-# This host is NOT colectivo.eternum.lat. That apex belongs to wefaber/colectivo-site since the
-# 2026-10-17 cutover and its snippet is /etc/nginx/snippets/colectivo-active.conf. This script
-# refuses to run against it, on purpose: two projects publishing the same vhost is how the old
-# /var/www deploy kept failing its health check and rolling back forever.
+# This script owns colectivo.eternum.lat and nothing else. Taking that apex over from
+# wefaber/colectivo-site is a one-time migration (deploy/README.md): the vhost for the apex must
+# include OUR snippet, not their colectivo-active.conf. The preflight checks exactly that, so a
+# half-done takeover fails as "vhost still serves colectivo-site" instead of as a health check that
+# gets a 200 from the wrong project — which is how the old /var/www deploy rolled back forever.
 set -euo pipefail
 
 SITE=colectivo-static
 BASE="${COLECTIVO_STATIC_BASE:-/home/hermes/colectivo-static}"
 STATE="${COLECTIVO_STATIC_STATE:-/home/hermes/deploy/state/$SITE}"
 SNIPPET="${COLECTIVO_STATIC_SNIPPET:-/etc/nginx/snippets/$SITE-active.conf}"
-DOMAIN="${COLECTIVO_STATIC_DOMAIN:-colectivo-static.eternum.lat}"
+DOMAIN="${COLECTIVO_STATIC_DOMAIN:-colectivo.eternum.lat}"
 VHOST="${COLECTIVO_STATIC_VHOST:-/etc/nginx/sites-enabled/$DOMAIN}"
+# Snippet de wefaber/colectivo-site. Si el vhost del apex lo incluye, el dominio todavia es suyo.
+FOREIGN_SNIPPET=colectivo-active.conf
 ORIGIN_IP="${COLECTIVO_STATIC_ORIGIN_IP:-167.114.2.210}"
 DRY_RUN="${DRY_RUN:-0}"
 TRIES="${TRIES:-15}"
@@ -60,10 +63,12 @@ preflight() { # slot
 
   [[ -d "$BASE" && -w "$BASE" ]] || miss+=("2. docroot base missing or not writable: $BASE (mkdir -p $BASE)")
   [[ -d "$STATE" && -w "$STATE" ]] || miss+=("2. state dir missing or not writable: $STATE (mkdir -p $STATE)")
-  [[ -f "$VHOST" ]] || miss+=("3. no nginx vhost enabled at $VHOST (deploy/nginx/colectivo-static.conf)")
-  if [[ -f "$VHOST" ]]; then
-    grep -qs "$(basename "$SNIPPET")" "$VHOST" ||
-      miss+=("3. $VHOST does not include $(basename "$SNIPPET")")
+  if [[ ! -f "$VHOST" ]]; then
+    miss+=("3. no nginx vhost enabled at $VHOST (deploy/nginx/colectivo.conf)")
+  elif grep -qs "$FOREIGN_SNIPPET" "$VHOST"; then
+    miss+=("3. $VHOST still serves wefaber/colectivo-site (includes $FOREIGN_SNIPPET): install deploy/nginx/colectivo.conf first")
+  elif ! grep -qs "$(basename "$SNIPPET")" "$VHOST"; then
+    miss+=("3. $VHOST does not include $(basename "$SNIPPET")")
   fi
   [[ -f "$SNIPPET" ]] ||
     miss+=("4. nginx snippet missing: $SNIPPET (initial: $(write_snippet "$slot" | tr '\n' ' '))")
